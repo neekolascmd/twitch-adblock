@@ -1,0 +1,160 @@
+/**
+ * NEW FILE: CSS for custom player controls overlay.
+ * Styled to match Twitch's dark theme.
+ * Injected alongside the player controls component.
+ */
+
+/* Controls overlay container */
+.ta-controls-overlay {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+  background: linear-gradient(transparent, rgba(0, 0, 0, 0.85));
+  padding-top: 40px;
+}
+
+.ta-controls-overlay.ta-controls-visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Control bar */
+.ta-controls-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  color: #efeff1;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-size: 13px;
+}
+
+/* Control buttons */
+.ta-ctrl-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 4px;
+  background: transparent;
+  color: #efeff1;
+  cursor: pointer;
+  padding: 4px;
+  transition: background 0.15s;
+  flex-shrink: 0;
+}
+
+.ta-ctrl-btn:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.ta-ctrl-btn:active {
+  background: rgba(255, 255, 255, 0.25);
+}
+
+.ta-ctrl-btn svg {
+  fill: currentColor;
+}
+
+/* Volume section */
+.ta-volume-wrap {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.ta-volume-slider {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 80px;
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.3);
+  outline: none;
+  opacity: 0;
+  transition: opacity 0.2s, width 0.2s;
+  cursor: pointer;
+}
+
+.ta-volume-wrap:hover .ta-volume-slider {
+  opacity: 1;
+}
+
+.ta-volume-slider::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #efeff1;
+  cursor: pointer;
+}
+
+.ta-volume-slider::-moz-range-thumb {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #efeff1;
+  border: none;
+  cursor: pointer;
+}
+
+.ta-volume-slider::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 2px;
+}
+
+.ta-volume-slider::-moz-range-track {
+  height: 4px;
+  border-radius: 2px;
+  background: rgba(255, 255, 255, 0.3);
+}
+
+/* Live indicator */
+.ta-live-indicator {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 11px;
+  font-weight: 700;
+  color: #e91916;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  padding: 2px 8px;
+  background: rgba(233, 25, 22, 0.15);
+  border-radius: 4px;
+}
+
+/* Theater mode styles */
+.ta-theater-mode {
+  position: fixed !important;
+  top: 50px !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 0 !important;
+  width: 100vw !important;
+  height: calc(100vh - 50px) !important;
+  z-index: 9999 !important;
+}
+
+/* Notification toast */
+#ta-notification {
+  animation: ta-slide-in 0.3s ease;
+}
+
+@keyframes ta-slide-in {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
