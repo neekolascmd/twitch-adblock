@@ -5,55 +5,117 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Twitch Adblock Settings</title>
   <style>
-    body {
-      width: 300px;
-      padding: 16px;
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    * {
       margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      width: 320px;
       background: #0e0e10;
+      color: #efeff1;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      font-size: 14px;
+      padding: 16px;
+    }
+
+    .header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid #2f2f35;
+    }
+
+    .header h1 {
+      font-size: 16px;
+      font-weight: 700;
       color: #efeff1;
     }
 
-    h1 {
-      font-size: 18px;
-      margin: 0 0 16px 0;
-      color: #bf94ff;
+    .header .version {
+      font-size: 11px;
+      color: #adadb8;
+      background: #1f1f23;
+      padding: 2px 6px;
+      border-radius: 4px;
+    }
+
+    /* Server status indicator */
+    .status-bar {
       display: flex;
       align-items: center;
       gap: 8px;
-    }
-
-    .setting {
-      margin-bottom: 16px;
-      padding: 12px;
-      background: #18181b;
+      padding: 10px 12px;
+      background: #1f1f23;
       border-radius: 6px;
-      border: 1px solid #2c2c30;
+      margin-bottom: 16px;
     }
 
-    .setting-header {
+    .status-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      flex-shrink: 0;
+    }
+
+    .status-dot.connected { background: #00e676; }
+    .status-dot.disconnected { background: #e91916; }
+    .status-dot.checking { background: #ffc107; animation: pulse 1s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.4; }
+    }
+
+    .status-text {
+      font-size: 12px;
+      color: #adadb8;
+    }
+
+    .status-text strong {
+      color: #efeff1;
+    }
+
+    /* Settings section */
+    .settings-section {
+      margin-bottom: 12px;
+    }
+
+    .setting-row {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      padding: 12px;
+      background: #1f1f23;
+      border-radius: 6px;
       margin-bottom: 8px;
     }
 
-    .setting-title {
+    .setting-info {
+      flex: 1;
+    }
+
+    .setting-label {
       font-weight: 600;
-      font-size: 14px;
+      font-size: 13px;
+      margin-bottom: 2px;
     }
 
-    .setting-description {
-      font-size: 12px;
+    .setting-desc {
+      font-size: 11px;
       color: #adadb8;
-      line-height: 1.4;
     }
 
+    /* Toggle switch */
     .toggle {
       position: relative;
-      display: inline-block;
       width: 40px;
-      height: 20px;
+      height: 22px;
+      flex-shrink: 0;
+      margin-left: 12px;
     }
 
     .toggle input {
@@ -62,89 +124,108 @@
       height: 0;
     }
 
-    .slider {
+    .toggle-slider {
       position: absolute;
       cursor: pointer;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background-color: #53535f;
-      transition: 0.3s;
-      border-radius: 20px;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: #3a3a3d;
+      border-radius: 22px;
+      transition: background 0.2s;
     }
 
-    .slider:before {
+    .toggle-slider::before {
+      content: '';
       position: absolute;
-      content: "";
-      height: 14px;
-      width: 14px;
+      height: 16px;
+      width: 16px;
       left: 3px;
       bottom: 3px;
-      background-color: white;
-      transition: 0.3s;
+      background: white;
       border-radius: 50%;
+      transition: transform 0.2s;
     }
 
-    input:checked + .slider {
-      background-color: #9147ff;
+    .toggle input:checked + .toggle-slider {
+      background: #772ce8;
     }
 
-    input:checked + .slider:before {
-      transform: translateX(20px);
+    .toggle input:checked + .toggle-slider::before {
+      transform: translateX(18px);
+    }
+
+    /* Info section */
+    .info-section {
+      margin-top: 12px;
+      padding-top: 12px;
+      border-top: 1px solid #2f2f35;
+    }
+
+    .info-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #adadb8;
+      padding: 3px 0;
     }
 
     .footer {
-      margin-top: 16px;
-      padding-top: 12px;
-      border-top: 1px solid #2c2c30;
-      font-size: 11px;
-      color: #adadb8;
-      text-align: center;
-    }
-
-    .status {
       margin-top: 12px;
-      padding: 8px;
-      background: #1f1f23;
-      border-radius: 4px;
-      font-size: 12px;
-      color: #00f593;
       text-align: center;
-      display: none;
     }
 
-    .status.show {
-      display: block;
+    .footer a {
+      color: #bf94ff;
+      text-decoration: none;
+      font-size: 12px;
     }
 
-    .icon {
-      width: 20px;
-      height: 20px;
+    .footer a:hover {
+      color: #9147ff;
     }
   </style>
 </head>
 <body>
-  <h1>
-    <svg class="icon" viewBox="0 0 24 24" fill="currentColor">
-      <path fill-rule="evenodd" d="M13 2L3 14h7l-1 8 12-14h-7l-1-6Z" clip-rule="evenodd"/>
-    </svg>
-    Twitch Adblock
-  </h1>
+  <div class="header">
+    <h1>Twitch Adblock</h1>
+    <span class="version">v1.1.0</span>
+  </div>
 
-  <div class="setting">
-    <div class="setting-header">
-      <div class="setting-title">Auto-Replace Player</div>
+  <!-- Server Status -->
+  <div class="status-bar">
+    <span class="status-dot checking" id="statusDot"></span>
+    <span class="status-text" id="statusText">Checking server...</span>
+  </div>
+
+  <!-- Settings -->
+  <div class="settings-section">
+    <div class="setting-row">
+      <div class="setting-info">
+        <div class="setting-label">Auto-Replace Player</div>
+        <div class="setting-desc">Automatically replace Twitch player on channel pages</div>
+      </div>
       <label class="toggle">
         <input type="checkbox" id="autoReplace">
-        <span class="slider"></span>
+        <span class="toggle-slider"></span>
       </label>
-    </div>
-    <div class="setting-description">
-      Automatically replace the Twitch player when loading a stream you're NOT subscribed to.
     </div>
   </div>
 
-  <script src="../utils/popup-script.ts" type="module"></script>
+  <!-- Info -->
+  <div class="info-section">
+    <div class="info-row">
+      <span>Server</span>
+      <span id="serverAddr">localhost:61616</span>
+    </div>
+    <div class="info-row">
+      <span>Active Streams</span>
+      <span id="activeStreams">--</span>
+    </div>
+  </div>
+
+  <div class="footer">
+    <a href="https://github.com/hawolt/twitch-adblock" target="_blank">GitHub</a>
+  </div>
+
+  <script type="module" src="../utils/popup-script.ts"></script>
 </body>
 </html>
