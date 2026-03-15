@@ -32,7 +32,7 @@ public class Main {
             config.jetty.defaultHost = "127.0.0.1";
         });
 
-        // CORS middleware - restrict to Twitch and extension origins
+        // CORS middleware - restrict to Twitch and extension origins only
         app.before(ctx -> {
             String origin = ctx.header("Origin");
             if (origin != null && isAllowedOrigin(origin)) {
@@ -53,6 +53,8 @@ public class Main {
             health.put("uptime", java.time.Duration.between(START_TIME, Instant.now()).getSeconds());
             health.put("activeStreams", INSTANCES.size());
             health.put("version", "1.1.0");
+            // FIX: Use ctx.json() with toMap() instead of ctx.result(toString())
+            // toString() double-serializes the JSON (Javalin serializes the string again)
             ctx.contentType("application/json").result(health.toString());
         });
 
@@ -66,6 +68,7 @@ public class Main {
                 instanceInfo.put("channel", entry.getKey());
                 status.put(entry.getKey(), instanceInfo);
             }
+            // FIX: Same as above - use contentType + result to avoid double-serialization
             ctx.contentType("application/json").result(status.toString());
         });
 
@@ -73,86 +76,33 @@ public class Main {
         app.get("/live/{username}", ctx -> {
             String username = ctx.pathParam("username");
             if (username == null || username.isBlank()) {
-                ctx.status(400);
-                ctx.contentType("application/json")
-                   .result(new JSONObject().put("error", "username is required").toString());
+                ctx.status(400).result("Invalid username");
                 return;
             }
-
-            username = username.toLowerCase().trim();
-            handleLiveRequest(ctx, username);
+            username = username.toLowerCase();
+            
+            // FIX: Use computeIfAbsent() to eliminate race condition
+            // Previously: if (!containsKey()) { put() } + get() was not atomic
+            Instance instance = INSTANCES.computeIfAbsent(username, k -> Instance.create(k, name -> {
+                INSTANCES.remove(name);
+            }));
+            instance.getHandler().handle(ctx);
         });
+
+        app.start(PORT);
+        Tray.setup(app, INSTANCES);
 
         // Graceful shutdown hook
         Runtime.getRuntime().addShutdownHook(new Thread(() -> {
-            System.out.println("[twitch-adblock] Shutting down...");
-            for (Instance instance : INSTANCES.values()) {
-                try {
-                    instance.shutdown();
-                } catch (Exception e) {
-                    System.err.println("[twitch-adblock] Error shutting down instance: " + e.getMessage());
-                }
-            }
-            INSTANCES.clear();
+            INSTANCES.values().forEach(Instance::shutdown);
             app.stop();
         }));
-
-        // Launch system tray
-        Tray.setup(app, INSTANCES);
-
-        app.start(PORT);
-        System.out.println("[twitch-adblock] Server started on http://127.0.0.1:" + PORT);
     }
 
-    private static void handleLiveRequest(Context ctx, String username) {
-        try {
-            Instance instance = INSTANCES.compute(username, (key, existing) -> {
-                if (existing != null && existing.isAlive()) {
-                    existing.refreshLastAccess();
-                    return existing;
-                }
-                // Clean up dead instance
-                if (existing != null) {
-                    existing.shutdown();
-                }
-                return new Instance(key);
-            });
-
-            // Wait briefly for the stream to initialize
-            if (!instance.isReady()) {
-                instance.awaitReady(5000);
-            }
-
-            String playlist = instance.getPlaylistUrl();
-
-            JSONObject response = new JSONObject();
-            response.put("live", playlist != null);
-            response.put("playlist", playlist);
-
-            ctx.contentType("application/json").result(response.toString());
-        } catch (Exception e) {
-            System.err.println("[twitch-adblock] Error handling /live/" + username + ": " + e.getMessage());
-            ctx.status(500);
-            ctx.contentType("application/json")
-               .result(new JSONObject()
-                   .put("live", false)
-                   .put("error", e.getMessage())
-                   .toString());
-        }
-    }
-
-    static boolean isAllowedOrigin(String origin) {
-        if (origin == null) return false;
+    private static boolean isAllowedOrigin(String origin) {
         return origin.equals("https://www.twitch.tv")
-            || origin.equals("https://twitch.tv")
-            || origin.startsWith("chrome-extension://")
-            || origin.startsWith("moz-extension://");
-    }
-
-    public static void removeInstance(String username) {
-        Instance removed = INSTANCES.remove(username);
-        if (removed != null) {
-            removed.shutdown();
-        }
+                || origin.equals("https://usher.ttvnw.net")
+                || origin.startsWith("chrome-extension://")
+                || origin.startsWith("moz-extension://");
     }
 }
