@@ -16,6 +16,9 @@ import { getVolume, setVolume } from './storage';
 
 const CONTROLS_ID = 'twitch-adblock-controls';
 
+/** Module-level reference to fullscreenchange handler for cleanup */
+let fullscreenHandler: (() => void) | null = null;
+
 /** SVG icon paths */
 const ICONS = {
   play: '<path d="M8 5v14l11-7z" fill="currentColor"/>',
@@ -122,7 +125,7 @@ export function injectPlayerControls(video: HTMLVideoElement): HTMLElement {
   // Live indicator
   const liveIndicator = document.createElement('div');
   liveIndicator.className = 'ta-live-indicator';
-  liveIndicator.innerHTML = `<svg viewBox="0 0 24 24" width="10" height="10">${ICONS.live}</svg> LIVE`;
+  liveIndicator.innerHTML = `${ICONS.live} LIVE`;
   bar.appendChild(liveIndicator);
 
   // Spacer
@@ -161,12 +164,14 @@ export function injectPlayerControls(video: HTMLVideoElement): HTMLElement {
   });
   bar.appendChild(fsBtn);
 
-  document.addEventListener('fullscreenchange', () => {
+  // Store handler in module-level variable for cleanup
+  fullscreenHandler = () => {
     fsBtn.innerHTML = '';
     fsBtn.appendChild(
       createSVG(document.fullscreenElement ? ICONS.fullscreenExit : ICONS.fullscreen)
     );
-  });
+  };
+  document.addEventListener('fullscreenchange', fullscreenHandler);
 
   container.appendChild(bar);
 
@@ -207,5 +212,11 @@ export function removePlayerControls(): void {
   if (el) {
     el.remove();
     logger.debug('Player controls removed');
+  }
+
+  // Remove fullscreenchange listener to prevent leaks
+  if (fullscreenHandler) {
+    document.removeEventListener('fullscreenchange', fullscreenHandler);
+    fullscreenHandler = null;
   }
 }
