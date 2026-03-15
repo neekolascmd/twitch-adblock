@@ -20,6 +20,7 @@ const RETRY_DELAY_MS = 500;
 
 let serverStatus: ServerStatus = 'checking';
 let lastHealthCheck = 0;
+let cachedHealthData: HealthStatus | null = null;
 const HEALTH_CHECK_INTERVAL_MS = 30_000;
 
 type StatusChangeCallback = (status: ServerStatus) => void;
@@ -105,19 +106,20 @@ function sleep(ms: number): Promise<void> {
 /** Check if the local server is running and healthy */
 export async function checkServerHealth(): Promise<HealthStatus | null> {
   const now = Date.now();
-  if (now - lastHealthCheck < HEALTH_CHECK_INTERVAL_MS && serverStatus === 'connected') {
-    return { status: 'ok', uptime: 0, activeStreams: 0, version: 'cached' };
+  if (now - lastHealthCheck < HEALTH_CHECK_INTERVAL_MS && serverStatus === 'connected' && cachedHealthData) {
+    return cachedHealthData;
   }
   lastHealthCheck = now;
   setServerStatus('checking');
 
-  const result = await fetchWithRetry<HealthStatus>(
+  const result = await fetchWithRetry(
     `${API_BASE_URL}/health`,
     async (res) => await res.json() as HealthStatus,
     1 // fewer retries for health checks
   );
 
   if (result) {
+    cachedHealthData = result;
     setServerStatus('connected');
   } else {
     setServerStatus('disconnected');
@@ -140,7 +142,7 @@ export async function isServerReachable(): Promise<boolean> {
 
 /** Generic GET request to local server */
 export async function getFromAPI(endpoint: string): Promise<LiveSource | null> {
-  return fetchWithRetry<LiveSource>(
+  return fetchWithRetry(
     `${API_BASE_URL}${endpoint}`,
     async (res) => await res.json() as LiveSource
   );
