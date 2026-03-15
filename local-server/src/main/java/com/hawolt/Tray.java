@@ -8,6 +8,8 @@ import java.util.concurrent.ConcurrentHashMap;
 /**
  * System tray integration.
  * Improvement: Added status menu item showing active stream count.
+ * Fix: Exit handler now calls app.stop() instead of System.exit(0),
+ * allowing shutdown hooks to run and clean up resources properly.
  */
 public class Tray {
 
@@ -22,7 +24,7 @@ public class Tray {
 
             // Create a simple icon (16x16 purple square)
             Image icon = Toolkit.getDefaultToolkit().createImage(new byte[0]);
-            TrayIcon trayIcon = new TrayIcon(icon, "Twitch Adblock Server");
+            TrayIcon trayIcon = new TrayIcon(icon, "Twitch Ad Block Server");
             trayIcon.setImageAutoSize(true);
 
             PopupMenu menu = new PopupMenu();
@@ -36,7 +38,17 @@ public class Tray {
             MenuItem exitItem = new MenuItem("Exit");
             exitItem.addActionListener(e -> {
                 tray.remove(trayIcon);
-                System.exit(0);
+                // FIX: Use app.stop() instead of System.exit(0)
+                // This triggers the shutdown hook in Main, which properly
+                // cleans up all instances, workers, and idle watchers
+                app.stop();
+                // Signal all instances to shut down
+                instances.values().forEach(Instance::shutdown);
+                // Give threads a moment to clean up, then exit
+                new Thread(() -> {
+                    try { Thread.sleep(1000); } catch (InterruptedException ignored) {}
+                    System.exit(0);
+                }, "shutdown-delay").start();
             });
             menu.add(exitItem);
 
